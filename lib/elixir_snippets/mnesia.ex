@@ -35,6 +35,12 @@ defmodule ElixirSnippets.Mnesia do
     Keyword.keys(my_record(my_record()))
   end
 
+  def add_node(node) do
+    Mnesia.change_config(:extra_db_nodes, [node])
+    Mnesia.change_table_copy_type(:schema, node, :disc_copies)
+    Mnesia.add_table_copy(:my_record, node, :disc_copies)
+  end
+
   def add_element(id, name, number) do
     fun = fn() ->
       # tab is first element from my_record (which is my_record)
