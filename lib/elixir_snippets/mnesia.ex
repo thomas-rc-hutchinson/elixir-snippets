@@ -35,6 +35,12 @@ defmodule ElixirSnippets.Mnesia do
     Keyword.keys(my_record(my_record()))
   end
 
+  def add_node(node) do
+    Mnesia.change_config(:extra_db_nodes, [node])
+    Mnesia.change_table_copy_type(:schema, node, :disc_copies)
+    Mnesia.add_table_copy(:my_record, node, :disc_copies)
+  end
+
   def add_element(id, name, number) do
     fun = fn() ->
       # tab is first element from my_record (which is my_record)
@@ -60,6 +66,28 @@ defmodule ElixirSnippets.Mnesia do
   def delete_element(id) do
     fun = fn() -> Mnesia.delete({@tab, id}) end
     Mnesia.activity(:transaction, fun)      
+  end
+
+  def match_element(spec) do
+    fun = fn() -> Mnesia.match_object(spec) end
+    Mnesia.activity(:transaction, fun)
+  end
+
+  def select_element_with_name_1 do
+    import Ex2ms
+    # :ets.fun2ms doesn't work. This is an alternative, doesn't seem to accept variables in the
+    # expression though.
+    match_spec = fun do {record, id, name, number} when name == 1 -> {record, id, name, number} end
+    fun = fn() -> Mnesia.select(@tab, match_spec) end
+    Mnesia.activity(:transaction, fun)
+  end
+
+  def find_element_by_name(find_name) do
+    foldl = fn({_,_,name,_} = record, acc) when name == find_name -> [record|acc]
+              (record, acc) -> acc
+    end
+    fun = fn() -> Mnesia.foldl(foldl, [], :my_record) end
+    Mnesia.activity(:transaction, fun)
   end
 
   def record_representation do
@@ -89,6 +117,9 @@ defmodule ElixirSnippets.MnesiaDemo do
     [my_record(id: 123, name: "name", number: 111)] =
       ElixirSnippets.Mnesia.find_element(123)
 
+    [my_record(id: 123, name: "name", number: 111)] =
+      ElixirSnippets.Mnesia.match_record({:my_record, :_, :_, 111})
+    
     #delete
     ElixirSnippets.Mnesia.delete_element(123)
     [] = ElixirSnippets.Mnesia.find_element(123) 

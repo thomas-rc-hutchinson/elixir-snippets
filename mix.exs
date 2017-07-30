@@ -27,6 +27,6 @@ defmodule ElixirSnippets.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [{:ex2ms, "~> 1.0"}]
   end
 end
